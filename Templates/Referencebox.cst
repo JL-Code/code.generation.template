@@ -1,0 +1,83 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="HTML" Encoding="utf-8"%>
+<%@ Property Name="ReferenceName" Optional="False" Type="System.String" Category="参数" Description="参照名称" %>
+<%@ Property Name="ComponentType" Optional="False" Type="ComponentTypeEnum" Category="参数" Description="参照数据承载组件的类型" %>
+@{
+    Layout = null;
+}
+<div class="bjui-pageContent">
+    <!--页面内容区域-->
+</div>
+<div class="bjui-pageFooter hz_pageFooter">
+    <div class="hz_preservation_button_bg">
+        <!--按钮区域-->
+        <button class="btn-close"type="button">关闭</button>
+        <button class="btn-blue" type="button" id="<%=this.ReferenceName.ToLower()%>_reference_btn_affirm">确认</button>
+    </div>
+</div>
+<script>
+    (function ($, window, doc) {
+        try {
+            var $dom = $.CurrentDialog;
+            
+            initReference();
+            initWidgets();
+            bindEvents();
+            initData();
+        } catch (e) {
+            console.log(e);
+        }
+
+        /**
+         * description 初始化参照小部件
+         */
+        function initWidgets() {
+            
+        }
+
+        /**
+         * description 绑定事件
+         */
+        function bindEvents() {
+
+        }
+        
+        /**
+         * description 初始化参照数据
+         */
+        function initData() {
+
+        }
+
+        function initReference() {
+            var widget = { name: '<%=ReferenceName%>-reference', id: '<%=ReferenceName%>-reference', type: '<%=ComponentType%>' };
+            $.reference.widget = $.extend(true, $.reference.widget, widget);
+        }
+
+        /**
+         * description 传回数据
+         */
+        function save() {
+           
+        }
+
+        /**
+         * description 返回空值 
+         * 《不需要的话可以删除》
+         */
+        function returnNull() {
+            $.reference.widget.refData = "";
+            $.CurrentDialog.zap_dialog("closeCurrent");
+        }
+
+    })(jQuery, window, document);
+</script>
+
+<script runat="template">
+    public enum ComponentTypeEnum{
+        none=0,
+        datagrid,
+        treegrid,
+        tree,
+        datalist
+    }
+</script>

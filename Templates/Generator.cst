@@ -1,0 +1,221 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="Text" Debug="True"  %>
+
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" OnChanged="SourceOnChange"  Category="上下文" Optional="False" %>
+
+<%@ Property Name="ClassName" Optional="False" Type="System.String" Category="基本信息" Description="实体名称" %>
+<%@ Property Name="ContextName" Optional="False" Type="System.String" Default="IUnitOfWork" Category="基本信息" Description="仓储上下文接口名称" %>
+<%@ Property Name="TableName" Optional="False" Type="System.String" Category="基本信息" Description="数据表名称" %>
+
+<%@ Property Name="LayoutType"  Type="LayoutTypeEnum" Category="视图信息" Description="选择母模页" %>
+
+<%@ Property Name="ControllerNameSpace" Optional="False" Type="System.String" Default="ZapSoft.Main.Web.Areas.TPS.Controllers" Category="命名空间" Description="控制器命名空间" %>
+<%@ Property Name="ModelNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Model" Category="命名空间" Description="模型命名空间" %>
+<%@ Property Name="DTONameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Application" Category="命名空间" Description="DTO命名空间" %>
+<%@ Property Name="ServiceNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Application" Category="命名空间" Description="服务命名空间" %>
+<%@ Property Name="IServiceNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Application" Category="命名空间" Description="服务接口命名空间" %>
+<%@ Property Name="RepositoryNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Repository" Category="命名空间" Description="仓储命名空间" %>
+<%@ Property Name="IRepositoryNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Model" Category="命名空间" Description="仓储接口命名空间" %>
+<%@ Property Name="ConfigurationNameSpace" Optional="False" Type="System.String" Default="ZapSoft.TPS.Repository" Category="命名空间" Description="实体配置命名空间" %>
+<%@ Property Name="FrameworkNameSpace" Optional="False" Type="System.String" Default="ZapSoft.Core.Framework" Category="命名空间" Description="基础设施层命名空间" %>
+<%@ Property Name="CoreRepositoryNameSpace" Optional="False" Type="System.String" Default="ZapSoft.Core.Repositories" Category="命名空间" Description="核心模型仓储层命名空间" %>
+
+<%@ Property Name="GloblJS" Optional="True" Type="System.Boolean" Default="false" Category="选项" Description="个人需求，非必填！" %>
+<%@ Property Name="HasApproval" Optional="True" Type="System.Boolean" Default="false" Category="选项" Description="审批功能 非必填" %>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Design" %> <%--用来设置弹出文件选择框--%>
+<%@ Assembly Name="CodeSmith.BaseTemplates" %> <%--用于将自身模板生成的信息输出到指定文件--%>
+<%@ Import Namespace="CodeSmith.BaseTemplates" %>
+<%@ Import Namespace="SchemaExplorer" %>
+
+<%-- 注册要生成的模板 --%>
+
+<%@ Register Template="Entity.cst" Name="EntityTemplate" MergeProperties="False"  %>
+<%@ Register Template="DTO.cst" Name="DTOTemplate" MergeProperties="False"  %>
+<%@ Register Template="IRepository.cst" Name="IRepositoryTemplate" MergeProperties="False"  %>
+<%@ Register Template="Repository.cst" Name="RepositoryTemplate" MergeProperties="False"  %>
+<%@ Register Template="Service.cst" Name="ServiceTemplate" MergeProperties="False"  %>
+<%@ Register Template="IService.cst" Name="IServiceTemplate" MergeProperties="False"  %>
+<%@ Register Template="Mapping.cst" Name="MappingTemplate" MergeProperties="False"  %>
+<%@ Register Template="Configuration.cst" Name="ConfigurationTemplate" MergeProperties="False"  %>
+<%@ Register Template="IndexJS.cst" Name="IndexJSTemplate" MergeProperties="False"  %>
+<%@ Register Template="View.cst" Name="ViewTemplate" MergeProperties="False"  %>
+<%@ Register Template="ViewDetail.cst" Name="ViewDetailTemplate" MergeProperties="False"  %>
+<%@ Register Template="Controller.cst" Name="ControllerTemplate" MergeProperties="False"  %>
+<%@ Register Template="WebAPI.cst" Name="WebAPITemplate" MergeProperties="False"  %>
+<%@ Register Template="IFlowApprove.cst" Name="IFlowApproveTemplate" MergeProperties="False"  %>
+
+<%-- 执行输出文件的函数 --%>
+
+<% this.OutPutFile(); %>
+
+<script runat="template">
+    //输出文件
+    private void OutPutFile()
+    {
+        //生成模板实例
+        CodeTemplate entity =new EntityTemplate();
+        CodeTemplate dto =new DTOTemplate();
+        CodeTemplate repository =new RepositoryTemplate();
+        CodeTemplate irepository =new IRepositoryTemplate();
+        CodeTemplate service =new ServiceTemplate();
+        CodeTemplate iservice =new IServiceTemplate();
+        CodeTemplate mapping =new MappingTemplate();
+        CodeTemplate configuration =new ConfigurationTemplate();
+        CodeTemplate jstemplate = new IndexJSTemplate();
+        CodeTemplate viewdetail =new ViewDetailTemplate();
+        CodeTemplate controller =new ControllerTemplate();
+        CodeTemplate view = new ViewTemplate();
+
+        //指定输出路径
+        string entityFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +".cs";
+        
+        //给Entity模板参数赋值
+        entity.SetProperty("SourceTable",this.SourceTable);
+        entity.SetProperty("SourceTable",this.SourceTable);
+        entity.SetProperty("ClassName",this.ClassName);
+        entity.SetProperty("ClassNameSpace",this.ModelNameSpace);
+        entity.SetProperty("FrameworkNameSpace",this.FrameworkNameSpace);
+        
+        entity.RenderToFile(entityFilePath,true);
+        
+        //指定输出路径
+        string dtoFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Dto.cs";
+        
+         //给DTO模板参数赋值
+        dto.SetProperty("SourceTable",this.SourceTable);
+        dto.SetProperty("SourceTable",this.SourceTable);
+        dto.SetProperty("ClassName",this.ClassName);
+        dto.SetProperty("ClassNameSpace",this.DTONameSpace);
+        dto.RenderToFile(dtoFilePath,true);
+        
+        //指定输出路径
+        string repFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Repository.cs";
+        
+         //给Repository模板参数赋值
+        repository.SetProperty("ClassName",this.ClassName);
+        repository.SetProperty("ClassNameSpace",this.RepositoryNameSpace);
+        repository.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        repository.SetProperty("CoreRepositoryNameSpace",this.CoreRepositoryNameSpace);
+        repository.SetProperty("ContextName",this.ContextName);
+        repository.SetProperty("FrameworkNameSpace",this.FrameworkNameSpace);
+        repository.RenderToFile(repFilePath,true);
+        
+        //指定输出路径
+        string irepFilePath = OutputDirectory +"\\"+this.ClassName+"\\I"+ this.ClassName +"Repository.cs";
+        
+         //给IRepository模板参数赋值
+        irepository.SetProperty("ClassName",this.ClassName);
+        irepository.SetProperty("ClassNameSpace",this.IRepositoryNameSpace);
+        irepository.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        irepository.SetProperty("FrameworkNameSpace",this.FrameworkNameSpace);
+        
+        irepository.RenderToFile(irepFilePath,true);
+        
+         //指定输出路径
+        string serviceFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Service.cs";
+        
+         //给Service模板参数赋值
+        service.SetProperty("ClassName",this.ClassName);
+        service.SetProperty("FrameworkNameSpace",this.FrameworkNameSpace);
+        service.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        service.SetProperty("RepositoryNameSpace",this.RepositoryNameSpace);
+        service.SetProperty("ClassNameSpace",this.ServiceNameSpace);
+        service.SetProperty("HasApproval",this.HasApproval);
+        service.RenderToFile(serviceFilePath,true);
+        
+         //指定输出路径
+        string iserviceFilePath = OutputDirectory+"\\"+this.ClassName+"\\I"+ this.ClassName +"Service.cs";
+        
+         //给IService模板参数赋值
+        iservice.SetProperty("ClassName",this.ClassName);
+        iservice.SetProperty("ClassNameSpace",this.ServiceNameSpace);
+        iservice.SetProperty("FrameworkNameSpace",this.FrameworkNameSpace);
+        iservice.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        iservice.SetProperty("HasApproval",this.HasApproval);
+        iservice.RenderToFile(iserviceFilePath,true);
+        
+        //指定输出路径
+        string mappingFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Mapping.cs";
+        
+         //给Mapping模板参数赋值
+        mapping.SetProperty("ClassName",this.ClassName);
+        mapping.SetProperty("ClassNameSpace",this.ServiceNameSpace);
+        mapping.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        mapping.RenderToFile(mappingFilePath,true);
+        
+        //指定输出路径
+        string configurationFilePath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Configuration.cs";
+        
+         //给Configuration模板参数赋值
+        configuration.SetProperty("TableName",this.TableName);
+        configuration.SetProperty("ClassName",this.ClassName);
+        configuration.SetProperty("ClassNameSpace",this.ConfigurationNameSpace);
+        configuration.SetProperty("ModelNameSpace",this.ModelNameSpace);
+        configuration.RenderToFile(configurationFilePath,true);
+      
+         string jsPath = OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName;
+        //生成js模板
+        jstemplate.SetProperty("ClassName",this.ClassName);
+        jstemplate.SetProperty("GloblJS",this.GloblJS);
+        jstemplate.SetProperty("HasApproval",this.HasApproval);
+        jstemplate.RenderToFile(jsPath +".js",true);
+        jstemplate.RenderToFile(jsPath +"Detail.js",true);
+        //生成列表界面
+        view.SetProperty("ClassName",this.ClassName);
+        view.SetProperty("LayoutType",this.LayoutType);
+        view.SetProperty("GloblJS",this.GloblJS);
+        view.RenderToFile(OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Index.cshtml",true);
+        //生成详情界面
+        viewdetail.SetProperty("ClassName",this.ClassName);
+        viewdetail.SetProperty("HasApproval",this.HasApproval);
+        viewdetail.RenderToFile(OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Detail.cshtml",true);
+        //生成控制器
+        controller.SetProperty("ClassName",this.ClassName);
+        controller.SetProperty("ClassNameSpace",this.ControllerNameSpace);
+        controller.RenderToFile(OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"Controller.cs",true);
+        //生成工作流审批相关 webapi  IFlowApprove
+        if(this.HasApproval){
+            var webapiTemplate = new WebAPITemplate();
+            var iflowApproveTemplate = new IFlowApproveTemplate();
+            webapiTemplate.SetProperty("ClassName",this.ClassName);
+            iflowApproveTemplate.SetProperty("ClassNameSpace",this.ServiceNameSpace);
+            webapiTemplate.RenderToFile(OutputDirectory +"\\"+this.ClassName+"\\"+ this.ClassName +"ApiController.cs",true);
+            iflowApproveTemplate.RenderToFile(OutputDirectory +"\\"+this.ClassName+"\\IFlowApprove.cs",true);
+        }
+        
+    }
+    //解决方案输出路径
+    private string Directory = String.Empty;
+    [Editor(typeof(System.Windows.Forms.Design.FolderNameEditor), typeof(System.Drawing.Design.UITypeEditor))] 
+    [Optional, NotChecked]
+    [DefaultValue("")]
+    public string OutputDirectory 
+    { 
+        get
+        {
+            return Directory;
+        }
+        set
+        {
+            if (value.EndsWith("\\")) value = value.Substring(0, value.Length -1);
+            Directory = value;
+        } 
+    }
+   public enum LayoutTypeEnum{
+        None=0,
+        Layout_Left_TBInRight,
+        Layout_LeftRight,
+        Layout_Top_LRInBottom,
+        Layout_TopBottom
+    }
+   //表改变时发生
+   public void SourceOnChange(object sender, EventArgs e ){
+       //调试
+       //System.Diagnostics.Debugger.Launch();  
+       //System.Diagnostics.Debugger.Break(); 
+        // var tableName= this.SourceTable.FullName.Replace("dbo.","");
+        // this.ClassName = tableName.Split('_')[1];
+        // this.TableName = tableName;
+   }
+</script>

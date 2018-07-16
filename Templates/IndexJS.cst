@@ -1,0 +1,85 @@
+﻿<%@ Template Language="JavaScript" TargetLanguage="JavaScript" %>
+<%@ Property Name="ClassName" Optional="False" Type="System.String" Category="基本信息" Description="类名称" %>
+<%@ Property Name="GloblJS" Optional="True" Type="System.Boolean" Default="false" Category="个人需求" Description="个人需求" %>
+<%@ Property Name="HasApproval" Optional="False" Type="System.Boolean" Category="选项" Description="审批" %>
++function ($) {
+
+   <%if(this.GloblJS){ %>
+    var namespace = $.zap.pages.<%=this.ClassName.ToLower()%>;
+    var variableset = namespace.variableset;
+   <%}%>
+    var $dom = $.CurrentDialog;
+    try {
+        initCompnoents();
+        bindEvents();
+        typeSetting();
+    } catch (e) {
+        console.log(e);
+    }
+    /**
+     * @description 标准的初始化界面组件函数
+     */
+    function initCompnoents() { }
+    /**
+     * @description 标准的绑定DOM元素事件函数
+     */
+    function bindEvents() { }
+    /**
+     * @description 标准的界面排版函数 
+     */
+    function typeSetting() { }
+    
+    <%if(this.HasApproval) {%>
+    /**
+     * @description 冻结UI
+     */
+    function frozenUI(){
+        //默认
+         $dom.find('textarea,input').each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
+    }
+     /**
+     * @description 审批通过
+     */
+    function approvePass() {
+        var url = '请求地址/approvePass';
+        var guid = '业务GUID';
+        $.post(url, { businessGuid: guid }, function (data) {
+            if (data.ResultType == 0) {
+                //其他操作
+                alertmsg(data.Message);
+            } else {
+                container.alertmsg('warn', data.Message);
+            }
+        }, 'json');
+    }
+
+    /**
+    * @description 审批驳回
+    */
+    function approveReject() {
+        var url = '请求地址/approveReject';
+        var guid = '业务GUID';
+        $.post(url, { businessGuid: guid }, function (data) {
+            if (data.ResultType == 0) {
+                //其他操作
+                alertmsg(data.Message);
+            } else {
+                container.alertmsg('warn', data.Message);
+            }
+        }, 'json');
+    }
+
+    /**
+     * @description 发起审批 获取对应的审批模板
+     */
+    function launchApprove() {
+        //通用方法 ==》common.js 
+        openApprovePage({
+            businessGuid: '业务GUID',
+            bizTypeName: '业务类型名称==》找谷歌拿'
+        });
+    }
+    <%} %>
+}(jQuery)

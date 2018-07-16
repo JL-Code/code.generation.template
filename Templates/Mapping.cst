@@ -1,0 +1,44 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" Encoding="utf-8" Debug="True"  %>
+
+<%@ Property Name="ClassName" Optional="False" Type="System.String" Category="基本信息" Description="类名称" %>
+<%@ Property Name="ClassNameSpace" Optional="False" Type="System.String" Category="基本信息" Description="命名空间" %>
+<%@ Property Name="ModelNameSpace" Optional="False" Type="System.String" Category="基本信息" Description="模型层命名空间" %>
+
+<%@ Map Name="CSharpAlias" Src="System-CSharpAlias" Description="C#系统类型图" %>
+<%-- 注册要生成的模板 --%>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using <%= this.ModelNameSpace%>;
+
+namespace <%= this.ClassNameSpace%>
+{
+    <%--生成制定表的实体类--%>
+    public static class <%= this.ClassName%>Mapping {
+    
+        public static <%= this.ClassName%> ToEntity(this <%= this.ClassName%>Dto dto)
+        {
+            return AutoMapperConfiguration.Mapper.Map<<%= this.ClassName%>Dto, <%= this.ClassName%>>(dto);
+        }
+
+        public static <%= this.ClassName%>Dto ToDto(this <%= this.ClassName%> entity)
+        {
+            return AutoMapperConfiguration.Mapper.Map<<%= this.ClassName%>, <%= this.ClassName%>Dto>(entity);
+        }
+
+        public static List<<%= this.ClassName%>> ToEntities(this List<<%= this.ClassName%>Dto> dtos)
+        {
+            return AutoMapperConfiguration.Mapper.Map<List<<%= this.ClassName%>Dto>, List<<%= this.ClassName%>>>(dtos);
+        }
+
+        public static List<<%= this.ClassName%>Dto> ToDtos(this List<<%= this.ClassName%>> entities)
+        {
+            return AutoMapperConfiguration.Mapper.Map<List<<%= this.ClassName%>>, List<<%= this.ClassName%>Dto>>(entities);
+        }
+
+    }
+}
+
+
