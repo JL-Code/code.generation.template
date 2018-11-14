@@ -1,0 +1,47 @@
+﻿<%-- 
+Name:审批接口
+Author: 蒋勇
+Description:
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+
+<%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Category="1.基本信息" Description="命名空间"%>
+<%@ Property Name="MicroService" Type="System.Boolean" Category="2.可选项" Description="微服务(勾选后将按照微服务架构的文件组织结构生成代码)"%>
+
+using System;
+
+namespace <%= this.ModuleNameSpace%>
+{
+    /// <summary>
+    /// 审批接口
+    /// </summary>
+    public interface IApproval<T> where T : IApprovalEntity
+    {
+        /// <summary>
+        /// 审批
+        /// </summary>
+        /// <param name="business">业务实体</param>
+        /// <param name="online">线上审批</param>
+        void Approve(T business, bool online = false);
+
+        /// <summary>
+        /// 驳回
+        /// </summary>
+        /// <param name="business"></param>
+        void Reject(T business);
+
+        /// <summary>
+        /// 请求审批
+        /// </summary>
+        /// <param name="business"></param>
+        void RequestApproval(T business);
+    }
+}
+
+<script runat="template">
+// My methods here.
+public string SampleMethod()
+{
+  return "Method output.";
+}
+</script>

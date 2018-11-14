@@ -1,0 +1,157 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 生成模块列表页面脚本
+--%>
+<%@ Template Language="C#" TargetLanguage="JavaScript" %>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="ModuleName" Type="System.String" Category="1.基本信息" Description="模块名"%>
+<%@ Property Name="ComponentType" Type="ComponentTypeEnum" Category="1.基本信息" Description="UI框架组件类型"%>
+<%@ Import Namespace="System.Collections.Generic"%>
+
++function ($) {
+    var NAMESPACE = ".<%=this.ClassName%>Event";
+    var $dom = $.CurrentNavtab;
+    var $btnBox = $dom.find('#<%=this.ClassName.ToLower()%>_index_btns');//按钮集合
+
+    try {
+        components();
+        bindEvents();
+
+    } catch (e) {
+        console.log(e);
+    }
+    /**
+     * @description 标准的初始化界面组件函数
+     */
+    function components() {
+        $dom.find('.easyui-textbox').each(function () {
+            $(this).textbox();
+        });
+        $dom.find('.easyui-numberbox').each(function () {
+            $(this).numberbox({
+                readonly: true,
+                precision: 2
+            });
+        });
+    }
+    /**
+     * @description 标准的绑定DOM元素事件函数
+     */
+    function bindEvents() {
+    
+        $btnBox.off('click' + NAMESPACE).on('click' + NAMESPACE, 'button[data-action]', function (e) {
+            var data = $(this).data();
+            switch (data.action) {
+                case "save":
+                    save();
+                    break;
+                case "saveAndAdd":
+                    save(true);
+                    break;
+                case "remove":
+                    remove();
+                break;
+                default:
+                    break;
+            }
+        });
+    }
+    
+    /**
+     * @description 打开新增界面
+     */
+    function openPage() {
+        var selectRow = $treeGrid.treegrid('getSelected');
+        var url = '../<%=this.ModuleName.ToLower()%>/<%=this.ClassName.ToLower()%>/Create<%=this.ClassName.ToLower()%>?parentGuid=' + selectRow.id;
+        if (!selectRow) {
+            $dom.alertmsg('warn', '请先选择一条记录！')
+        } else {
+            openDialog(url, "新增数据");
+        }
+    }
+
+    /**
+     * @description 删除一条数据
+     */
+    function remove() {
+        try {
+            var validateUrl = '../<%=this.ModuleName.ToLower()%>/<%=this.ClassName.ToLower()%>/ValidateRemove';
+            var selectRow = $treeGrid.treegrid('getSelected');
+            var params = { businessGuid: selectRow.id };
+
+            if (!selectRow) {
+                $dom.alertmsg('warn', '请先选择一条记录！')
+                return
+            }
+            $.post(validateUrl, params)
+                .done(function (data) {
+                    var dataJson = JSON.parse(data);
+                    if (dataJson.ResultType == 0) {
+                        $dom.alertmsg('confirm', '您确定要删除该条数据吗？', { okCall: executeRemove });
+                    } else {
+                        $dom.alertmsg('warn', dataJson.Message);
+                    }
+                });
+        } catch (e) {
+            alertmsg(e.message);
+        }
+    }
+
+    /**
+     * @description 执行删除
+     */
+    function executeRemove() {
+        var removeUrl = '../<%=this.ModuleName.ToLower()%>/<%=this.ClassName.ToLower()%>/Remove';
+        var selectRow = $treeGrid.treegrid('getSelected');
+        var params = { businessGuid: selectRow.id }
+        $.post(removeUrl, params,
+            function (data) {
+                if (data.ResultType == 0) {
+                    $dom.alertmsg('info', data.Message);
+                    $treeGrid.treegrid('remove', selectRow.id);
+                } else
+                    $dom.alertmsg('warn', data.Message);
+            }, 'json');
+    }
+
+    /**
+     * @description 打开Dialog
+     * @param {string} url 页面路径
+     * @param {string} title 标题
+     */
+    function openDialog(url, title) {
+        $.zap.openDialog({
+            url: url,
+            title: title
+        });
+    }
+    
+}(jQuery)
+
+<script runat="template">
+    Dictionary<string,List<string>> result = null;
+    /// <summary>
+    /// 组件类型
+    /// </summary>
+    public enum ComponentTypeEnum{
+        DataGrid=0,
+        Tree,
+        TreeGrid,
+        DataList,
+        ComboTree
+    }
+    
+    public string InitVariable(){
+        var dataComponent = "";
+        switch(this.ComponentType){
+            case ComponentTypeEnum.DataGrid:
+                break;
+            case ComponentTypeEnum.TreeGrid:
+                break;
+            default:
+                break;
+        }
+        return "";
+    }
+</script>

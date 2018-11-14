@@ -1,0 +1,70 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" Encoding="utf-8" Debug="True"  %>
+
+<%@ Property Name="Table" Type="SchemaExplorer.TableSchema" Category="0.上下文"%>
+<%@ Property Name="ClassName"  Type="System.String" Category="1.基本信息" Description="类名" %>
+<%@ Property Name="ModuleNameSpace"  Type="System.String" Category="1.基本信息" Description="命名空间" %>
+<%@ Property Name="NeedApproval"  Type="System.Boolean" Category="2.可选项" Description="启用审批" %>
+<%@ Map Name="CSharpAlias" Src="../Maps/Sql-CSharp.csmap" Description="C# 类型别名" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+<%-- 注册要生成的模板 --%>
+using System;
+using Zap.Framework;
+
+namespace <%= this.ModuleNameSpace%>
+{
+<%--生成制定表的实体类--%>
+    public class <%=this.ClassName%>:<%=this.NeedApproval?"IApprovalEntity":"IEntity"%> {
+    
+        <%foreach(ColumnSchema column in this.Table.Columns){%>
+        /// <summary>
+        /// <%= column.Description%>
+        /// </summary>
+        <%= GenerateProperty(column)%>
+        <%}%>
+        
+        <%if(this.NeedApproval){%>
+        /// <summary>
+        /// 审批状态
+        /// </summary>
+        public string ApproveStatus { get; set; }
+
+        /// <summary>
+        /// 审批人GUID
+        /// </summary>
+        public Guid? ApproveBy { get; set; }
+
+        /// <summary>
+        /// 审批人
+        /// </summary>
+        public string ApproveByName { get; set; }
+
+        /// <summary>
+        /// 审批时间
+        /// </summary>
+        public DateTime? ApproveDate { get; set; }
+        <%}%>
+    }
+}
+<script runat="template">
+private List<string> types = new List<string> {"string"};
+
+public string GenerateProperty(ColumnSchema column){
+
+    var type = CSharpAlias[column.NativeType.ToLower()];
+    var nullSymbol = "";
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    if(column.AllowDBNull && !types.Contains(column.SystemType.Name.ToLower())){
+        nullSymbol = "?";
+    }
+    return "public "+type+nullSymbol+"  "+columnName+ "{ get; set; }";
+}
+
+//重写CodeTemplate的方法
+public override string GetFileName()
+{
+    return ClassName + ".cs";
+}
+</script>
+

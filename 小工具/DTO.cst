@@ -1,0 +1,46 @@
+﻿<%@ Template Language="C#" TargetLanguage="C#"  Debug="True" %>
+<%@ Map Name="CSharpAlias" Src="System-CSharpAlias" Description="C#系统类型图" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+
+<%-- 参数 --%>
+<%@ Property Name="Source" Type="SchemaExplorer.TableSchema" OnChanged="GenerateClassName" Optional="True" Category="参数" Description="DB Schema" %>
+<%@ Property Name="ClassName" Type="System.String" Optional="True" Category="参数" Description="类名" %>
+
+public class <%= this.ClassName%>Dto {
+            
+        <%foreach(ColumnSchema column in this.Source.Columns){%>
+        /// <summary>
+        /// <%= column.Description%>
+        /// </summary>
+        <%= GenerateProperty(column)%>
+        <%}%>
+        /// <summary>
+        /// 数据状态 (表示数据的 新增 删除 修改 状态)
+        /// </summary>
+        public OperationState State { get; set; }
+}
+
+<script runat="template">
+public string GenerateProperty(ColumnSchema column){
+  
+    var types = new List<string> {"int","DateTime","Guid"};
+    var type = CSharpAlias[column.SystemType.FullName];
+    var nullSymbol = "";
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    if(column.AllowDBNull && types.Contains(column.SystemType.Name)){
+        nullSymbol = "?";
+    }
+    return "public "+type+nullSymbol+" "+columnName+ "{ get; set; }";
+}
+
+public void GenerateClassName(object sender, EventArgs e){
+       //调试
+       //System.Diagnostics.Debugger.Launch();  
+       //System.Diagnostics.Debugger.Break(); 
+      var tableName= this.Source.FullName.Replace("dbo.","");
+      this.ClassName = tableName.Split('_')[1];
+    
+}
+</script>

@@ -1,0 +1,27 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Category="1.基本信息" Description="命名空间"%>
+using  Zap.Framework;
+
+namespace <%=this.ModuleNameSpace%>
+{
+    public  class <%=this.ClassName%>Repository:Repository<<%=this.ClassName%>>,I<%=this.ClassName%>Repository {
+    
+        public <%=this.ClassName%>Repository(IUnitOfWork context) : base(context)
+        {
+
+        }
+    }
+}
+<script runat="template">
+// My methods here.
+public string SampleMethod()
+{
+  return "Method output.";
+}
+</script>

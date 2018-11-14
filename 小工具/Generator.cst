@@ -1,0 +1,135 @@
+﻿<%@ Template Language="C#" TargetLanguage="C#"  Debug="True" %>
+<%@ Map Name="CSharpAlias" Src="System-CSharpAlias" Description="C#系统类型图" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Collections.Generic" %>
+
+<%-- 参数 --%>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" OnChanged="GenerateClassName" Optional="True" Category="参数" Description="DB Schema" %>
+<%@ Property Name="SourceView" Type="SchemaExplorer.ViewSchema" OnChanged="GenerateClassName" Optional="True" Category="参数" Description="DB Schema" %>
+<%@ Property Name="ClassName" Type="System.String" Optional="True" Category="参数" Description="类名" %>
+
+public class Code {
+    public string Get<%=this.ClassName%>TreeData(Guid projGuid)
+    {
+        try
+        {
+            var data = _currService.Get<%=this.ClassName%>TreeData(projGuid);
+            AllocationMaxLevel = data.Max(m => m.Level);
+            var treeData = new TreeData<<%=this.ClassName%>Dto, <%=this.ClassName%>Dto>(
+                   data,
+                   o => string.IsNullOrEmpty(o.ParentCode),
+                   (o, parent) => o.ParentCode == parent.SubjectCode,
+                   o => o.SubjectCode,
+                   Init<%=this.ClassName%>TreeNode);
+            var tree = treeData.GetTree();
+            return JsonHelper.ObjectToJSON(tree);
+
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex.Message, ex);
+            var data = TreeNodeEmpty<<%=this.ClassName%>Dto>.ToJson;
+            return JsonHelper.ObjectToJSON(data);
+        }
+    }
+    public <%=this.ClassName%>Node Init<%=this.ClassName%>TreeNode(<%=this.ClassName%>Dto option)
+    {
+        var node = new <%=this.ClassName%>Node
+        {
+            <%
+            var table = this.SourceTable;
+            var view = this.SourceView;
+            if(table != null){%>
+                <%for(var i = 0; i < table.Columns.Count; i++){%>
+                <%=GenerateAttribute(table.Columns[i],i,table.Columns.Count)%>
+                <%}%>
+            <%}else{%>
+                <%for(var i = 0; i < view.Columns.Count; i++){%>
+                <%=GenerateAttribute(table.Columns[i],i,table.Columns.Count)%>
+                <%}%>
+            <%}%>      
+        };
+        return node;
+    }
+}
+
+public class <%= this.ClassName%>Dto {
+        <%if(table != null){%>
+            <%foreach(var column in table.Columns){%>
+                /// <summary>
+                /// <%= column.Description%>
+                /// </summary>
+                <%= GenerateProperty(column)%>
+            <%}%>
+        <%}else{%>
+            <%foreach(var column in view.Columns){%>
+            /// <summary>
+            /// <%= column.Description%>
+            /// </summary>
+            <%= GenerateProperty(column)%>
+            <%}%>
+        <%}%>
+        /// <summary>
+        /// 数据状态 (表示数据的 新增 删除 修改 状态)
+        /// </summary>
+        public OperationState State { get; set; }
+}
+
+public class <%= this.ClassName%>Node : TreeNode<<%=this.ClassName%>Dto> {
+        <%if(table != null){%>
+            <%foreach(var column in table.Columns){%>
+                /// <summary>
+                /// <%= column.Description%>
+                /// </summary>
+                <%= GenerateProperty(column)%>
+            <%}%>
+        <%}else{%>
+            <%foreach(var column in view.Columns){%>
+            /// <summary>
+            /// <%= column.Description%>
+            /// </summary>
+            <%= GenerateProperty(column)%>
+            <%}%>
+        <%}%>
+}
+
+<script runat="template">
+public string GenerateAttribute(ColumnSchema column,int index,int count){
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    var str =  columnName+ "= option."+columnName +(index==count-1 ? "" : ",");
+    return str;
+}
+public string GenerateAttribute(ViewColumnSchema column,int index,int count){
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    var str =  columnName+ "= option."+columnName +(index==count-1 ? "" : ",");
+    return str;
+}
+public void GenerateClassName(object sender, EventArgs e){
+      var tableName= this.SourceTable.FullName.Replace("dbo.","");
+      this.ClassName = tableName.Split('_')[1];
+    
+}
+public string GenerateProperty(ColumnSchema column){
+  
+    var types = new List<string> {"int","DateTime","Guid"};
+    var type = CSharpAlias[column.SystemType.FullName];
+    var nullSymbol = "";
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    if(column.AllowDBNull && types.Contains(column.SystemType.Name)){
+        nullSymbol = "?";
+    }
+    return "public "+type+nullSymbol+" "+columnName+ "{ get; set; }";
+}
+public string GenerateProperty(ViewColumnSchema column){
+  
+    var types = new List<string> {"int","DateTime","Guid"};
+    var type = CSharpAlias[column.SystemType.FullName];
+    var nullSymbol = "";
+    var columnName = StringUtil.ToPascalCase(column.Name);
+    if(column.AllowDBNull && types.Contains(column.SystemType.Name)){
+        nullSymbol = "?";
+    }
+    return "public "+type+nullSymbol+" "+columnName+ "{ get; set; }";
+}
+</script>

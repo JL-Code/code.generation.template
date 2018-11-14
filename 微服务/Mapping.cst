@@ -1,0 +1,56 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" Encoding="utf-8" Debug="True"  %>
+<%@ Property Name="ClassName"  Type="System.String" Category="1.基本信息" Description="类名" %>
+<%@ Property Name="ModuleNameSpace" Type="System.String" Category="1.基本信息" Description="命名空间" %>
+<%-- 注册要生成的模板 --%>
+using System.Collections.Generic;
+using Zap.Framework.Mapper;
+
+namespace <%= this.ModuleNameSpace%>
+{
+    /// <summary>
+    /// AutoMapper映射配置扩展
+    /// </summary>
+    public static class <%=this.ClassName%>Mapping
+    {
+        /// <summary>
+        /// 变为Entity类型
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public static <%=this.ClassName%> ToEntity(this <%=this.ClassName%>Dto dto)
+        {
+            return MapperRegister.Map<<%=this.ClassName%>Dto, <%=this.ClassName%>>(dto);
+        }
+
+        /// <summary>
+        /// 变为DTO类型
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public static <%=this.ClassName%>Dto ToDto(this <%=this.ClassName%> entity)
+        {
+            return MapperRegister.Map<<%=this.ClassName%>, <%=this.ClassName%>Dto>(entity);
+        }
+
+        /// <summary>
+        /// 变为Entity集合
+        /// </summary>
+        /// <param name="dtos"></param>
+        /// <returns></returns>
+        public static List<<%=this.ClassName%>> ToEntities(this List<<%=this.ClassName%>Dto> dtos)
+        {
+            return MapperRegister.Map<List<<%=this.ClassName%>Dto>, List<<%=this.ClassName%>>>(dtos);
+        }
+
+        /// <summary>
+        /// 变为DTO集合
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        public static List<<%=this.ClassName%>Dto> ToDtos(this List<<%=this.ClassName%>> entities)
+        {
+            return MapperRegister.Map<List<<%=this.ClassName%>>, List<<%=this.ClassName%>Dto>>(entities);
+        }
+
+    }
+}

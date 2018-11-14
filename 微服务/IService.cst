@@ -1,0 +1,64 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Category="1.基本信息" Description="命名空间"%>
+<%@ Property Name="MicroService" Default="True" Type="System.Boolean" Category="2.可选项" Description="微服务"%>
+<%@ Property Name="NeedApproval" Type="System.Boolean" Category="2.可选项" Description="启用审批"%>
+using System;
+using Zap.Framework;
+
+namespace <%= this.ModuleNameSpace%>
+{
+    <%--生成制定表的实体类--%>
+    public  interface I<%= this.ClassName%>Service <%=this.SetApproval()%>
+    {
+    
+        /// <summary>
+        /// 获取实体
+        /// </summary>
+        /// <param name="guid">实体主键</param>
+        /// <returns></returns>
+        <%= this.ClassName%> GetEntity(Guid guid);
+        
+        /// <summary>
+        /// 获取实体DTO
+        /// </summary>
+        /// <param name="guid">实体主键</param>
+        /// <returns></returns>
+        <%= this.ClassName%>Dto GetDto(Guid guid);
+        
+        /// <summary>
+        /// 保存
+        /// </summary>
+        /// <param name="dto"></param>
+        void Save(<%= this.ClassName%>Dto dto);
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="businessGuid"></param>
+        void Remove(Guid businessGuid);
+
+        /// <summary>
+        /// 确认删除
+        /// </summary>
+        /// <param name="businessGuid"></param>
+        void ValidateRemove(Guid businessGuid);
+    }
+}
+
+<script runat="template">
+// 设置审批接口
+public string SetApproval()
+{
+    string str = "";
+    if (this.NeedApproval){
+        str=" : IApproval<"+this.ClassName+">";
+    }
+   return str;
+}
+</script>

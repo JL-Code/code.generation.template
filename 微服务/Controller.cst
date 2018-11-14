@@ -1,0 +1,255 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 生成模块MVC控制器代码
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ClassName" Type="System.String" Description="类名"%>
+<%@ Property Name="NeedApproval" Type="System.Boolean" Description="审批"%>
+<%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Description="命名空间"%>
+using System; 
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using Zap.Framework;
+
+namespace <%= this.ModuleNameSpace%>
+{
+    public class <%= this.ClassName%>Controller : BaseController
+    {
+    
+        IUnitOfWork _unitOfWork;
+        I<%= this.ClassName%>Service _currentService;
+        
+        public <%= this.ClassName%>Controller(
+            IUnitOfWork unitOfWork,
+            I<%= this.ClassName%>Service currentService)
+        {
+            _unitOfWork = unitOfWork;
+            _currentService = currentService;
+        }
+    
+        #region 视图
+
+        public ActionResult <%= this.ClassName%>Index()
+        {
+            return View();
+        }
+
+        public ActionResult Create<%= this.ClassName%>()
+        {
+
+            return RedirectToAction("<%= this.ClassName%>Detail", new { FormAction = FormAction.Create, Guid = Guid.Empty });
+        }
+
+        public ActionResult Modify<%= this.ClassName%>(Guid guid)
+        {
+
+            return RedirectToAction("<%= this.ClassName%>Detail", new { FormAction = FormAction.Modify,Guid = guid});
+        }
+
+        /// <summary>
+        /// 详情
+        /// </summary>
+        /// <param name="formActionName">来源 controller</param>
+        /// <returns></returns>
+        public ActionResult <%= this.ClassName%>Detail(FormAction formAction, Guid guid)
+        {
+            <%if(this.NeedApproval){%>
+            var dto = new <%=this.ClassName%>Dto{
+                ApprovalWay = GetApprovalWay()
+            };
+            <%}else{%>
+            var dto = new <%=this.ClassName%>Dto();
+            <%}%>
+            switch (formAction)
+            {
+                case FormAction.Create:
+                    dto.State = OperationStatus.Create;
+                    break;
+                case FormAction.Modify:
+                    dto = _currentService.GetDto(guid);
+                    dto.State = OperationStatus.Update;
+                    break;
+                default:
+                    break;
+            }
+            return View(dto);
+        }
+        
+        #endregion
+        
+        #region 操作
+
+        /// <summary>
+        /// 保存（新增或修改）
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public string Save(DocumentDto dto)
+        {
+            var result = SaveData(dto);
+            return result.ToJson();
+        }
+
+        private OperationResult SaveData(<%= this.ClassName%>Dto dto)
+        {
+            var result = new OperationResult();
+            try
+            {
+                _currentService.Save(dto);
+                _unitOfWork.Commite();
+                result.SetSuccess("操作成功");
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBackChanges();
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="businessGuid"></param>
+        /// <returns></returns>
+        public string Remove(Guid businessGuid)
+        {
+            var result = new OperationResult();
+            try
+            {
+                _currentService.Remove(businessGuid);
+                _unitOfWork.Commite();
+                result.SetSuccess("操作成功");
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBackChanges();
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            return result.ToJson();
+        }
+
+        /// <summary>
+        /// 删除前验证
+        /// </summary>
+        /// <param name="businessGuid"></param>
+        /// <returns></returns>
+        public string ValidateRemove(Guid businessGuid)
+        {
+            var result = new OperationResult();
+            try
+            {
+                _currentService.ValidateRemove(businessGuid);
+                result.SetSuccess();
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            return result.ToJson();
+        }
+
+       #endregion
+        
+       <% if(this.NeedApproval){ %>
+       #region 审批
+       
+        /// <summary>
+        /// 保存数据并提交审批
+        /// </summary>
+        /// <param name="dto">业务数据</param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult SaveAndRequestApproval(<%= this.ClassName%>Dto dto)
+        {
+            var result = SaveData(dto);
+            if (result.IsSuccess)
+            {
+                try
+                {
+                    var entity = _currentService.GetEntity(dto.<%= this.ClassName%>GUID);
+                    _currentService.RequestApproval(entity);
+                    _unitOfWork.Commite();
+                    result.SetSuccess("提交成功");
+                }
+                catch (Exception ex)
+                {
+                    _unitOfWork.RollBackChanges();
+                    result.Message = ex.Message;
+                    Logger.Error(ex.Message, ex);
+                }
+            }
+            var data = result.ToJson();
+            return Content(data);
+        }
+        /// <summary>
+        /// 审批通过
+        /// </summary>
+        /// <param name="businessGuid">业务GUID</param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult Approve(Guid businessGuid)
+        {
+            var result = new OperationResult();
+            try
+            {
+                var entity= _currentService.GetEntity(businessGuid);
+                _currentService.Approve(entity);
+                _unitOfWork.Commite();
+                 result.SetSuccess("已通过审批");
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBackChanges();
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            var data = result.ToJson();
+            return Content(data);
+        }
+        
+        /// <summary>
+        /// 审批驳回
+        /// </summary>
+        /// <param name="businessGuid">业务GUID</param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult Reject(Guid businessGuid)
+        {
+            var result = new OperationResult();
+            try
+            {
+                var entity= _currentService.GetEntity(businessGuid);
+                _currentService.Reject(entity);
+                _unitOfWork.Commite();
+                result.SetSuccess("已驳回审批");
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBackChanges();
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            var data = result.ToJson();
+            return Content(data);
+        }
+        
+        /// <summary>
+        /// 获取审批方式
+        /// </summary>
+        /// <returns>0 线下审批 1线上审批</returns>
+        string GetApprovalWay(){
+            
+             throw new NotImplementedException();
+        }
+        
+       #endregion
+       <%} %>
+    }
+}

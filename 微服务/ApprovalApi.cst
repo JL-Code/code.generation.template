@@ -1,0 +1,75 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 工作流审批回调API
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ClassName"  Type="System.String" Category="1.基本信息" Description="类名" %>
+<%@ Property Name="ModuleName" Type="System.String" Category="1.基本信息" Description="模块名"%>
+<%@ Property Name="ModuleNameSpace" Type="System.String" Category="1.基本信息" Description="命名空间" %>
+using System;
+using System.Web.Http;
+using Zap.Framework;
+
+namespace <%=this.ModuleNameSpace%>
+{
+    public class <%=this.ClassName%>ApiController : ApiController
+    {
+        private I<%=this.ClassName%>Service _currentService;
+        private IUnitOfWork _unitOfWork;
+
+        public <%=this.ClassName%>ApiController(I<%=this.ClassName%>Service currentService,
+            IUnitOfWork unitOfWork)
+        {
+            _currentService = currentService;
+            _unitOfWork = unitOfWork;
+        }
+        [Route("api/<%=this.ModuleName.ToLower()%>/<%=this.ClassName.ToLower()%>api")]
+        public string Post([FromBody]ApprovalDto business)
+        {
+            var result = new OperationResult();
+            try
+            {
+                if (business == null)
+                    throw new DataVerificationException("审批操作信息非法！");
+                var pwd = MD5Util.GetMD5(MD5Util.approveKey + business.BizGUID.ToString());
+                if (business.PassWord == null || !business.PassWord.Equals(pwd))
+                    throw new DataVerificationException("操作非法！");
+                var businessEntity = _currentService.GetEntity(business.BizGUID);
+                switch (business.WFStatus)
+                {
+                    case WfInstanceStatus.Invalid:
+                    case WfInstanceStatus.Draft://驳回
+                        _currentService.Reject(businessEntity);
+                        break;
+                    case WfInstanceStatus.Handling://请求审批
+                        _currentService.RequestApproval(businessEntity);
+                        break;
+                    case WfInstanceStatus.Passed://审批通过
+                        _currentService.Approve(businessEntity, true);
+                        break;
+                    default:
+                        throw new DataVerificationException("非法的审批操作！");
+                }
+                _unitOfWork.Commite();
+                result.Message = "审批通过";
+                result.ResultType = OperationResultType.Success;
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollBackChanges();
+                result.Message = ex.Message;
+                Logger.Error(ex.Message, ex);
+            }
+            return result.ToJson();
+        }
+    }
+}
+
+<script runat="template">
+// My methods here.
+public string SampleMethod()
+{
+  return "Method output.";
+}
+</script>

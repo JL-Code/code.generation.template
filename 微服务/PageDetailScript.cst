@@ -1,0 +1,337 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 生成模块详情页面脚本
+--%>
+<%@ Template Language="C#" TargetLanguage="JavaScript" %>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="ModuleName" Type="System.String" Category="1.基本信息" Description="模块名"%>
+<%@ Property Name="SaveAPI" Type="System.String" Category="2.可选项" Optional="True" Description="保存数据的API路径。"%>
+<%@ Property Name="NeedApproval" Type="System.Boolean" Category="2.可选项" Default="False" Description="勾选此选项，将为js生成审批相关代码。"%>
+<%@ Property Name="IsSimpleModelList" Type="System.Boolean" Category="2.可选项" Default="False" Description="简单模型配置,勾选将为js生成简单模型相关代码！"%>
+
++function ($) {
+    var detailEl = document.getElementById('<%=(this.ClassName.ToLower())%>_detail')
+    var DATASET = detailEl.dataset;//数据集合
+    var NAMESPACE = ".<%=this.ClassName%>Event";
+    var $dom = $.CurrentDialog;
+    var $form = $dom.find('#<%=(this.ClassName.ToLower())%>_detail_form');
+    var $btnBox = $dom.find('#<%=this.ClassName.ToLower()%>_detail_btns');//按钮集合
+
+    try {
+        components();
+        bindEvents();
+
+    } catch (e) {
+        console.log(e);
+    }
+    /**
+     * @description 标准的初始化界面组件函数
+     */
+    function components() {
+        $dom.find('.easyui-textbox').each(function () {
+            $(this).textbox();
+        });
+        $dom.find('.easyui-numberbox').each(function () {
+            $(this).numberbox({
+                readonly: true,
+                precision: 2
+            });
+        });
+    }
+    /**
+     * @description 标准的绑定DOM元素事件函数
+     */
+    function bindEvents() {
+    
+        $btnBox.off('click' + NAMESPACE).on('click' + NAMESPACE, 'button', function (e) {
+            var data = $(this).data();
+            switch (data.action) {
+                case "save":
+                    save();
+                    break;
+                case "saveAndAdd":
+                    save(true);
+                    break;
+                <% if(this.NeedApproval){%>
+                case "submitApprove":
+                    submitApproval();
+                    break;
+                case "launchApprove":
+                    launchApprove();
+                    break;
+                case "approvePass":
+                    approve();
+                    break;
+                case "approveReject":
+                    approveReject();
+                    break;
+                case "approveProcess":
+                    approveProcess();
+                    break;
+                <%} %>
+                default:
+                    break;
+            }
+        });
+    }
+<% if(this.NeedApproval){%>
+    /**
+     * @description 提交审批
+     */
+    function submitApproval() {
+
+        var data = getPostData();
+        var options = {
+            url: '../<%=this.ModuleName%>/<%=this.ClassName%>/SaveAndRequestApproval',
+            type: 'post',
+            data: {
+                dto: data.dto,
+                details: data.details
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data.ResultType == 0) {
+                    reload(data.AppendData);
+                    infoMsg(data.Message)
+                } else {
+                    warnMsg(data.Message)
+                }
+            },
+            error: function () {
+                console.log(arguments)
+            }
+        };
+        $.ajax(options);
+    }
+    /**
+     * @description 审批通过
+     */
+    function approve() {
+        var url = "../<%=this.ModuleName%>/<%=this.ClassName%>/Approve";
+        try {
+            $.post(url, { businessGuid: TCAGUID }, function (data) {
+                if (data.ResultType == 0) {
+                    reload(data.AppendData);
+                    infoMsg(data.Message)
+                } else
+                    warnMsg(data.Message)
+            }, 'json');
+        } catch (e) {
+            warnMsg(e.message);
+        }
+    }
+
+    /**
+     * @description 审批驳回
+     */
+    function approveReject() {
+        var url = "../<%=this.ModuleName%>/<%=this.ClassName%>/Reject";
+        try {
+            $.post(url, { businessGuid: TCAGUID }, function (data) {
+                if (data.ResultType == 0) {
+                    reload(data.AppendData);
+                    infoMsg(data.Message)
+                } else
+                    warnMsg(data.Message)
+            }, 'json');
+        } catch (e) {
+            warnMsg(e.message);
+        }
+    }
+
+    //发起审批
+    function launchApprove() {
+        $('#WF_FlowInstanceIndexCloseView_Only').val('Mine<%=this.ClassName%>BusinessFlow_Dialog');
+
+        $.post('../WF/APIWF/GetFlowInitiateUrl', {
+            businessGuid: DATASET.bizguid,
+            processGuid: '',
+            bizTypeName: '业务审批'
+        }, function (result) {
+            if (result.ResultType == 0) {
+                if (result.AppendData.TemplateCount == "1") {
+                    var url = result.AppendData.Url;
+                    var options = {
+                        url: url,
+                        id: 'Mine<%=this.ClassName%>BusinessFlow_Dialog',
+                        title: "发起",
+                        data: result.AppendData.Data,
+                        mask: true,
+                        width: 940,
+                        height: 610
+                    }
+                    $dom.zap_dialog(options);
+                } else if (result.AppendData.TemplateCount == "0") {
+                   warnMsg(result.AppendData.Msg);
+                }
+                else {
+                    var url = result.AppendData.Url;
+                    var options = {
+                        url: url,
+                        id: 'FlowInstNodeHandle_CreateDialog',
+                        title: "选择模板",
+                        data: result.AppendData.Data,
+                        mask: true,
+                        width: 440,
+                        height: 560
+                    }
+                    $dom.zap_dialog(options);
+                }
+            } else {
+                warnMsg(result.Message);
+            }
+        }, 'json')
+    }
+
+    //审批过程
+    function approveProcess() {
+        try {
+            $.post('../WF/APIWF/GetCheckFlowUrl', {
+                businessGuid: DATASET.bizguid
+            }, function (result) {
+                if (result.AppendData.IsExist) {
+                    $('#WF_FlowInstanceIndexCloseView_Only').val('CheckFlowLineChart_<%=this.ClassName%>_Dialog');
+
+                    var url = result.AppendData.Url;
+                    var options = {
+                        url: url,
+                        id: "CheckFlowLineChart_<%=this.ClassName%>_Dialog",
+                        title: '我的审批',
+                        mask: true,
+                        width: 940,
+                        height: 860
+                    }
+                    $dom.zap_dialog(options);
+                }
+                else {
+                    warnMsg(result.AppendData.Msg);
+                }
+            }, 'json');
+        } catch (e) {
+            console.error(e.message);
+        }
+    }
+<%}%>
+
+    /**
+     * @description 获取提交数据
+     */
+    function getPostData() {
+        //下面注释的是获取表单数据的代码 如果需要表单数据请解除注释
+        //var formData = GetSpecialFormData($form)[0];
+        //return formData;
+        throw new Error("未实现的方法");
+    }
+
+    /**
+     * @description 保存数据
+     * @param {bool} isClearForm 是否清空表单数据
+     */
+    function save(isClearForm) {
+        var isValid = $form.form('validate');
+        try {
+            if (!isValid) {
+                throw new Error("请补充完整表单信息");
+            }
+            $.zap.mask.init($dom);//开启遮罩
+            var data = getPostData();
+            var options = {
+                url: '<%=this.GetSaveEndPoint()%>',
+                data: { dto: data },
+                dataType: 'json',
+                success: function (data) {
+                    $.zap.mask.destory();//
+                    if (data.ResultType == 0) {
+                        infoMsg(data.Message)
+                        if (DATASET.action == "Update") {
+                            $dom.zap_dialog("closeCurrent")
+                        } else {
+                            reloadForm(isClearForm);
+                        }
+                        <%if(this.IsSimpleModelList){%>
+                        refreshSimpleModleList();
+                        <%}%>
+                    } else {
+                        warnMsg(data.Message)
+                    }
+                }
+            };
+            $.ajax(options);
+        } catch (e) {
+            if (isValid)
+                $.zap.mask.destory();
+            warnMsg(e.message);
+        }
+
+    }
+
+    //warnMsg 警告函数 msg 消息
+    function warnMsg(msg) {
+        $dom.alertmsg("warn", msg);
+    }
+    //提示函数 msg 消息
+    function infoMsg(msg) {
+        $dom.alertmsg("info", msg);
+    }
+    
+    <%if(this.IsSimpleModelList){%>
+    //刷新简单模型配置的列表
+    function refreshSimpleModleList() {
+        if (typeof window.simpleModelIndex_reloadTable === "function")
+            window.simpleModelIndex_reloadTable();
+    }
+    <%}else{%>
+    //刷新非简单模型配置的列表
+    function reloadList(){
+        throw new Error("未实现的方法")
+    }
+    <%}%>
+    
+    /**
+     * @description 刷新表单
+     * @param {bool} isClearForm 是否清空表单信息
+     */
+    function reloadForm(isClearForm) {
+        if (isClearForm === true) {
+            $dom.zap_dialog('reload');
+        }
+        else {
+            $dom.zap_dialog('reload', {
+                url: '../<%=this.ModuleName%>/<%=this.ClassName%>/Modify<%=this.ClassName%>',
+                title: "查看详情",
+                data: {
+                    <%=this.ClassName%>GUID: DATASET.bizguid,
+                    funcid: DATASET.funcid
+                }
+            });
+
+        }
+    }
+    
+    
+    /**
+     * @description 工作流审批回调刷新数据
+     * @param {Guid} bizGuid 业务GUID
+     */
+    function reload(bizGuid){
+        reloadForm();
+        <%if(this.IsSimpleModelList){%>
+        refreshSimpleModleList();
+        <%}else{%>
+        reloadList();
+        <%}%>
+    }
+    
+}(jQuery)
+<script runat="template">
+
+/// <summary>
+/// 获取保存的端点（路径）
+/// </summary>
+/// <returns>保存端点</returns>
+public string GetSaveEndPoint()
+{
+   return string.IsNullOrEmpty(this.SaveAPI) ? string.Format("../{0}/{1}/Save",this.ModuleName,this.ClassName) : this.SaveAPI;
+}
+</script>

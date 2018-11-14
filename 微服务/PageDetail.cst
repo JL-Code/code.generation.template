@@ -1,0 +1,85 @@
+﻿<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="ModuleNameSpace" Type="System.String" Category="1.基本信息" Description="命名空间"%>
+<%@ Property Name="ModuleName" Type="System.String" Category="1.基本信息" Description="模块名"%>
+<%@ Property Name="NeedApproval" Type="System.Boolean" Category="2.可选项" Description="勾选此选项，将为js生成审批相关代码。"%>
+<%@ Property Name="MicroService" Default="True" Type="System.Boolean" Category="2.可选项" Description="微服务"%>
+
+@{
+    Layout = null;
+}
+@using Zap.Framework;
+@model <%=this.ModuleNameSpace%>.<%=this.ClassName%>Dto
+<div class="bjui-pageContent adapt-form" <%=this.SetDataSet()%> id="<%=(this.ClassName.ToLower())%>_detail" style="background-color:#fff">
+   
+</div>
+<div class="bjui-pageFooter hz_pageFooter" id="<%=this.ClassName.ToLower()%>_detail_btns">
+    <% if(this.NeedApproval){ %>
+    @if (Model.State == OperationStatus.Update && Model.ApproveStatus == Zap.Framework.ApprovalStatus.UnApprove.<%=this.GetEnumStrMethodName()%>())
+    {
+        <button type="button" class="btn btn-close">关闭</button>
+        if (Model.ApprovalWay == ApprovalWay.Offline.GetEnumDesc())
+        {
+            <button type="button" class="btn btn-blue approve" data-action="submitApprove" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_SubmitApprove">提交审批</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-blue approve" data-action="launchApprove" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_LaunchApprove">发起审批</button>
+        }
+        <button type="button" class="btn btn-blue" data-action="save" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_Save">保存</button>
+    }
+    else if (Model.State == OperationStatus.Create)
+    {
+        <button type="button" class="btn btn-close">关闭</button>
+        <button type="button" class="btn btn-blue" data-action="save" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_Save">保存</button>
+    }
+    else if (Model.State == OperationStatus.Update && Model.ApproveStatus == Zap.Framework.ApprovalStatus.Approving.<%=this.GetEnumStrMethodName()%>())
+    {
+        <button type="button" class="btn btn-close">关闭</button>       
+         if (Model.ApprovalWay == ApprovalWay.Offline.GetEnumDesc())
+        {
+                   <button type="button" class="btn btn-blue approve" data-action="approveReject" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_ApproveReject">审批驳回</button>
+        <button type="button" class="btn btn-blue approve" data-action="approvePass" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_ApprovePass">审批通过</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-blue approve" data-action="approveProcess" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_ApproveProcess">审批过程</button>
+        }
+    }
+    else if (Model.State == OperationStatus.Update && Model.ApproveStatus == Zap.Framework.ApprovalStatus.Approved.<%=this.GetEnumStrMethodName()%>())
+    {
+        <button type="button" class="btn btn-close">关闭</button>
+        if (Model.ApprovalWay == ApprovalWay.Offline.GetEnumDesc())
+        {
+                  <button type="button" class="btn btn-blue approve" data-action="approveReject" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_ApproveReject">审批驳回</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-blue approve" data-action="approveProcess" id="<%=(this.ClassName.ToLower())%>_@(Model.<%=this.ClassName%>GUID)_ApproveProcess">审批过程</button>
+        }
+    }
+    <%}else{ %>
+     <button type="button" class="btn btn-close">关闭</button>
+     <button type="button" class="btn btn-blue" data-action="save">保存</button>
+     <button type="button" class="btn btn-blue" data-action="saveAndAdd">保存并新增</button>
+    <%} %>
+</div>
+<script src="~/Areas/<%=this.ModuleName%>/Scripts/<%=this.ClassName%>/<%=this.ClassName%>Detail.js"></script>
+<script runat="template">
+    public string GetEnumStrMethodName()
+    {
+      string method = "GetDescription";
+        if(this.MicroService){
+            method = "GetEnumDesc";
+        }
+      return method;
+    }
+    
+    public string SetDataSet(){
+        var defaultStr = "data-bizguid='@Model."+this.ClassName+"GUID' data-funcid='@Request[\"funcId\"]' data-action='@Model.State'";
+        if(this.NeedApproval){
+            defaultStr += " data-approvestatus='@Model.ApproveStatus'";
+        }
+        return defaultStr;
+    }
+</script>

@@ -1,0 +1,225 @@
+﻿<%-- 
+Name:
+Author: jiangy
+Description: 
+--%>
+<%@ Template Language="C#" TargetLanguage="C#" %>
+<%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Category="1.基本信息" Description="命名空间"%>
+<%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
+<%@ Property Name="CustomName" Type="System.Boolean" Category="2.可选项" Description="自定义名称（勾选时就可以自定义服务名称，而不是按照【类名Service】的方式拼接）"%>
+<%@ Property Name="CustomeServiceName" Type="System.String" Optional="True" Category="2.可选项" Description="自定义服务名（需启用自定义名称）"%>
+<%@ Property Name="MicroService" Default="True" Type="System.Boolean" Category="2.可选项" Description="微服务"%>
+<%@ Property Name="NeedApproval" Type="System.Boolean" Category="2.可选项" Description="启用审批"%>
+using System;
+using Zap.Framework;
+
+namespace <%=this.ModuleNameSpace%> {
+    public class <%=this.GetServiceName()%> :<%=this.GetServiceInterface()%>
+    {
+        #region Constructor
+        
+        I<%=this.ClassName%>Repository _currentRep;
+        
+        public <%=this.GetServiceName()%>(I<%=this.ClassName%>Repository repository)
+        {
+            _currentRep = repository;
+        }
+        #endregion
+        
+        #region Query
+
+        public <%=this.ClassName%>Dto GetDto(Guid guid)
+        {
+            var entity = GetEntity(guid);
+            return entity?.ToDto();
+        }
+
+        public <%=this.ClassName%> GetEntity(Guid guid)
+        {
+            var entity = _currentRep.GetById(guid);
+            return entity;
+        }
+
+        #endregion
+        
+        #region Operation
+
+        public void ValidateRemove(Guid businessGuid)
+        {
+            var entity = GetEntity(businessGuid);
+            if (entity == null)
+                throw new NullReferenceException("当前业务对象不存在或已被删除");
+            <%if(this.NeedApproval){%>
+            if (!string.IsNullOrEmpty(entity.ApproveStatus) && entity.ApproveStatus != ApprovalStatus.UnApprove.GetEnumDesc())
+                throw new NullReferenceException("业务处于审核中或已审核无法删除");
+            <%}%>
+        }
+
+        public void Remove(Guid businessGuid)
+        {
+            ValidateRemove(businessGuid);
+            var dbEntity = GetEntity(businessGuid);
+            if (dbEntity != null)
+                _currentRep.Remove(dbEntity);
+        }
+
+        /// <summary>
+        /// 保存
+        /// </summary>
+        /// <param name="dto"></param>
+        public void Save(<%=this.ClassName%>Dto dto)
+        {
+            switch (dto.State)
+            {
+                case OperationStatus.Create:
+                    Add(dto);
+                    break;
+                case OperationStatus.Update:
+                    Update(dto);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void Add(<%=this.ClassName%>Dto dto)
+        {
+            if (dto.<%=this.ClassName%>GUID == Guid.Empty)
+                dto.<%=this.ClassName%>GUID = Guid.NewGuid();
+            var entity = dto.ToEntity();
+            _currentRep.Add(entity);
+        }
+
+        private void Update(<%=this.ClassName%>Dto dto)
+        {
+            var entity = dto.ToEntity();
+            var dbEntity = GetEntity(entity.<%=this.ClassName%>GUID);
+            if (dbEntity == null)
+                throw new DataVerificationException("当前业务对象不存在或已被删除");
+            _currentRep.Modify(dbEntity, entity);
+        }
+
+        #endregion
+        
+         <% if(this.NeedApproval){%>
+        #region Approval
+
+        /// <summary>
+        /// 审批通过
+        /// </summary>
+        /// <param name="business"></param>
+        /// <param name="online">线上审批</param>
+        public void Approve(<%=this.ClassName%> business, bool online = false)
+        {
+            AuditCheck(business, ApprovalAction.ApprovePass);
+            business.ApproveDate = DateTime.Now;
+            business.ApproveBy = SessionService.UserClaims.UserId;
+            business.ApproveByName = SessionService.UserClaims.UserName;
+            business.ApproveStatus = ApprovalStatus.Approved.<%=this.GetEnumStrMethodName()%>();
+            if (online)
+            {
+                business.ApproveBy = Guid.Empty;
+                business.ApproveByName = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 审批驳回
+        /// </summary>
+        /// <param name="business"></param>
+        /// <param name="online">线上审批</param>
+        public void Reject(<%=this.ClassName%> business)
+        {
+            AuditCheck(business, ApprovalAction.ApproveReject);
+            business.ApproveStatus = ApprovalStatus.UnApprove.<%=this.GetEnumStrMethodName()%>();
+            business.ApproveDate = null;
+            business.ApproveBy = Guid.Empty;
+            business.ApproveByName = string.Empty;
+        }
+
+        /// <summary>
+        /// 请求审批
+        /// </summary>
+        /// <param name="business"></param>
+        /// <param name="online">线上审批</param>
+        public void RequestApproval(<%=this.ClassName%> business)
+        {
+            AuditCheck(business, ApprovalAction.LaunchApprove);
+            business.ApproveStatus = ApprovalStatus.Approving.<%=this.GetEnumStrMethodName()%>();
+        }
+
+        /// <summary>
+        /// 审核前检查数据
+        /// </summary>
+        /// <param name="business">业务实体</param>
+        /// <param name="action">审核动作</param>
+        void AuditCheck(<%=this.ClassName%> business, ApprovalAction action)
+        {
+            if (business == null)
+                throw new ArgumentNullException(nameof(business));
+            if (!AuditCheckResult(business, action))
+                throw new DataVerificationException("当前业务审核非法！");
+        }
+
+        /// <summary>
+        /// 审核前检查数据
+        /// </summary>
+        /// <param name="business">业务实体</param>
+        /// <param name="action">审核动作</param>
+        /// <returns>true 检查通过 false 检查失败</returns>
+        bool AuditCheckResult(<%=this.ClassName%> business, ApprovalAction action)
+        {
+            var flag = false;
+            switch (action)
+            {
+                case ApprovalAction.SubmitApprove:
+                case ApprovalAction.LaunchApprove:
+                    if (string.IsNullOrEmpty(business.ApproveStatus)
+               || business.ApproveStatus == ApprovalStatus.UnApprove.<%=this.GetEnumStrMethodName()%>())
+                        flag = true;
+                    break;
+                case ApprovalAction.ApproveReject:
+                    if (business.ApproveStatus == ApprovalStatus.Approved.<%=this.GetEnumStrMethodName()%>()||business.ApproveStatus == ApprovalStatus.Approved.<%=this.GetEnumStrMethodName()%>())
+                        flag = true;
+                    break;
+                case ApprovalAction.ApprovePass:
+                    if (business.ApproveStatus == ApprovalStatus.Approving.<%=this.GetEnumStrMethodName()%>())
+                        flag = true;
+                    break;
+                default:
+                    break;
+            }
+            return flag;
+        }
+        #endregion
+     <%}%>
+    }
+}
+<script runat="template">
+// My methods here.
+public string GetEnumStrMethodName()
+{
+  string method = "GetDescription";
+    if(this.MicroService){
+        method = "GetEnumDesc";
+    }
+  return method;
+}
+
+public string GetServiceName()
+{
+  string method = this.ClassName+"Service";
+    if(this.CustomName){
+        method = this.CustomeServiceName;
+    }
+  return method;
+}
+
+public string GetServiceInterface(){
+    string name = "I"+this.ClassName+"Service";
+    if(this.NeedApproval){
+        name = name+"<"+this.ClassName+">";
+    }
+  return name;
+}
+</script>
