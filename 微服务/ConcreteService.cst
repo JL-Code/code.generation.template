@@ -6,10 +6,10 @@ Description:
 <%@ Template Language="C#" TargetLanguage="C#" %>
 <%@ Property Name="ModuleNameSpace" Default="ZapSoft.Core.Framework" Type="System.String" Category="1.基本信息" Description="命名空间"%>
 <%@ Property Name="ClassName" Type="System.String" Category="1.基本信息" Description="类名"%>
-<%@ Property Name="CustomName" Type="System.Boolean" Category="2.可选项" Description="自定义名称（勾选时就可以自定义服务名称，而不是按照【类名Service】的方式拼接）"%>
+<%@ Property Name="EnableCustomName" Type="System.Boolean" Category="2.可选项" Description="启用自定义名称（勾选时就可以自定义服务名称，而不是按照【类名Service】的方式拼接）"%>
 <%@ Property Name="CustomeServiceName" Type="System.String" Optional="True" Category="2.可选项" Description="自定义服务名（需启用自定义名称）"%>
 <%@ Property Name="MicroService" Default="True" Type="System.Boolean" Category="2.可选项" Description="微服务"%>
-<%@ Property Name="NeedApproval" Type="System.Boolean" Category="2.可选项" Description="启用审批"%>
+<%@ Property Name="EnableApprove" Type="System.Boolean" Category="2.可选项" Description="勾选后将生成业务审批相关代码"%>
 using System;
 using Zap.Framework;
 
@@ -49,7 +49,7 @@ namespace <%=this.ModuleNameSpace%> {
             var entity = GetEntity(businessGuid);
             if (entity == null)
                 throw new NullReferenceException("当前业务对象不存在或已被删除");
-            <%if(this.NeedApproval){%>
+            <%if(this.EnableApprove){%>
             if (!string.IsNullOrEmpty(entity.ApproveStatus) && entity.ApproveStatus != ApprovalStatus.UnApprove.GetEnumDesc())
                 throw new NullReferenceException("业务处于审核中或已审核无法删除");
             <%}%>
@@ -101,7 +101,7 @@ namespace <%=this.ModuleNameSpace%> {
 
         #endregion
         
-         <% if(this.NeedApproval){%>
+         <% if(this.EnableApprove){%>
         #region Approval
 
         /// <summary>
@@ -209,7 +209,7 @@ public string GetEnumStrMethodName()
 public string GetServiceName()
 {
   string method = this.ClassName+"Service";
-    if(this.CustomName){
+    if(this.EnableCustomName){
         method = this.CustomeServiceName;
     }
   return method;
@@ -217,7 +217,7 @@ public string GetServiceName()
 
 public string GetServiceInterface(){
     string name = "I"+this.ClassName+"Service";
-    if(this.NeedApproval){
+    if(this.EnableApprove){
         name = name+"<"+this.ClassName+">";
     }
   return name;

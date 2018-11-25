@@ -12,6 +12,7 @@ Description: 用于生成代码文件
 
 <%@ Property Name="Table" Type="SchemaExplorer.TableSchema" Category="0.上下文" OnChanged="OnTableChange" %>
 <%@ Property Name="ModuleNameSpace" Type="System.String" Category="1.基本信息" OnChanged="OnNameSpaceChange" Description="命名空间" %>
+<%@ Property Name="NeedWeb" Type="System.Boolean" Category="1.基本信息" Description="勾选后将生产web层的控制器和视图、JavaScript脚本" %>
 
 <%-- 注册要生成的模板 --%>
 
@@ -74,14 +75,20 @@ public void GeneratedCode()
     entity.RenderToFile(directory+folder+ClassName+".cs",overwrite);
     iservice.RenderToFile(directory+folder+"I"+ClassName+"Service.cs",overwrite);
     cservice.RenderToFile(directory+folder+ClassName+"Service.cs",overwrite);
-    controller.RenderToFile(directory+folder+ClassName+"Controller.cs",overwrite);
-    pagedetail.RenderToFile(directory+folder+ClassName+"Detail.cshtml",overwrite);
-    pagedetailscript.RenderToFile(directory+folder+ClassName+"Detail.js",overwrite);
+  
     configuration.RenderToFile(directory+folder+ClassName+"Configuration.cs",overwrite);
     mapping.RenderToFile(directory+folder+ClassName+"Mapping.cs",overwrite);
     irepository.RenderToFile(directory+folder+"I"+ClassName+"Repository.cs",overwrite);
     repository.RenderToFile(directory+folder+ClassName+"Repository.cs",overwrite);
-    if(this.NeedApproval){
+    
+    
+    if(this.NeedWeb){
+        controller.RenderToFile(directory+folder+ClassName+"Controller.cs",overwrite);
+        pagedetail.RenderToFile(directory+folder+ClassName+"Detail.cshtml",overwrite);
+        pagedetailscript.RenderToFile(directory+folder+ClassName+"Detail.js",overwrite);
+    }
+    
+    if(this.EnableApprove){
         wfApi.RenderToFile(directory+folder+ClassName+"ApiController.cs",overwrite);
     }
 }
