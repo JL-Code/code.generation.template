@@ -21,7 +21,8 @@ using <%= this.FrameworkNameSpace%>;
 namespace <%= this.ClassNameSpace%>
 {
 <%--生成制定表的实体类--%>
-    public class <%= this.ClassName%> : IEntity {
+    public class <%= this.ClassName%> : Entity, IAggregateRoot 
+    {
     
         <%foreach(ColumnSchema column in this.SourceTable.Columns){%>
         /// <summary>

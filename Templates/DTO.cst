@@ -27,12 +27,15 @@ namespace <%= this.ClassNameSpace%>
         /// <%= column.Description%>
         /// </summary>
         <%= GenerateProperty(column)%>
-        <%}%>
         
+        @<%=column.Name%>,
+        <%}%>
         /// <summary>
         /// 数据状态 (表示数据的 新增 删除 修改 状态)
         /// </summary>
         public OperationState State { get; set; }
+        
+        //<%=GenerateSql(this.SourceTable.Columns)%>
     }
 }
 
@@ -47,6 +50,15 @@ public string GenerateProperty(ColumnSchema column){
         nullSymbol = "?";
     }
     return "public "+type+nullSymbol+"  "+columnName+ "{ get; set; }";
+}
+
+public string GenerateSql(ColumnSchemaCollection columns){
+    string result="";
+    foreach(ColumnSchema column in columns){
+        var columnName = StringUtil.ToPascalCase(column.Name);
+        result+="@"+columnName+",";
+    }
+    return result.Substring(0,result.Length-1);
 }
 </script>
 
