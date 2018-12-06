@@ -1,0 +1,136 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 用于生成代码文件
+--%>
+<%@ Template Language="C#" TargetLanguage="Text" Debug="False" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Design" %> <%--用来设置弹出文件选择框--%>
+<%@ Assembly Name="CodeSmith.BaseTemplates" %> <%--用于将自身模板生成的信息输出到指定文件--%>
+<%@ Import Namespace="CodeSmith.BaseTemplates" %>
+<%@ Import Namespace="SchemaExplorer" %>
+
+<%@ Property Name="Table" Type="SchemaExplorer.TableSchema" Category="0.上下文" OnChanged="OnTableChange" %>
+<%@ Property Name="ModuleNameSpace" Type="System.String" Category="1.基本信息" OnChanged="OnNameSpaceChange" Description="命名空间" %>
+<%@ Property Name="NeedWeb" Type="System.Boolean" Category="1.基本信息" Description="勾选后将生产web层的控制器和视图、JavaScript脚本" %>
+
+<%-- 注册要生成的模板 --%>
+
+<%@ Register Name="Entity" Template="Entity.cst" MergeProperties="True"  %>
+<%@ Register Name="DTO" Template="DTO.cst"  MergeProperties="True"  %>
+<%@ Register Name="IApproval" Template="IApproval.cst"  MergeProperties="True"  %>
+<%@ Register Name="IService" Template="IService.cst"  MergeProperties="True"  %>
+<%@ Register Name="ConcreteService" Template="ConcreteService.cst"  MergeProperties="True"  %>
+<%@ Register Name="Controller" Template="Controller.cst"  MergeProperties="True"  %>
+<%@ Register Name="PageDetail" Template="PageDetail.cst"  MergeProperties="True"  %>
+<%@ Register Name="PageDetailScript" Template="PageDetailScript.cst"  MergeProperties="True"  %>
+<%@ Register Name="Configuration" Template="Configuration.cst"  MergeProperties="True"  %>
+<%@ Register Name="Mapping" Template="Mapping.cst"  MergeProperties="True"  %>
+<%@ Register Name="IRepository" Template="IRepository.cst"  MergeProperties="True"  %>
+<%@ Register Name="Repository" Template="Repository.cst"  MergeProperties="True"  %>
+<%@ Register Name="ApprovalApi" Template="ApprovalApi.cst"  MergeProperties="True"  %>
+
+<%-- 执行输出文件的函数 --%>
+
+<% this.GeneratedCode(); %>
+
+<script runat="template">
+private string directory = String.Empty;
+private bool overwrite = true;
+// 生成代码.
+public void GeneratedCode()
+{
+    //复制主模板属性值到从模板
+    Entity entity = this.Create<Entity>();
+    DTO dto = this.Create<DTO>();
+    IService iservice = this.Create<IService>();
+    ConcreteService cservice = this.Create<ConcreteService>();
+    Controller controller = this.Create<Controller>();
+    PageDetail pagedetail = this.Create<PageDetail>();
+    PageDetailScript pagedetailscript = this.Create<PageDetailScript>();
+    Configuration configuration = this.Create<Configuration>();
+    Mapping mapping = this.Create<Mapping>();
+    IRepository irepository = this.Create<IRepository>();
+    Repository repository = this.Create<Repository>();
+    ApprovalApi wfApi = this.Create<ApprovalApi>();
+
+    this.CopyPropertiesTo(entity);
+    this.CopyPropertiesTo(dto);
+    this.CopyPropertiesTo(iservice);
+    this.CopyPropertiesTo(cservice);
+    this.CopyPropertiesTo(controller);
+    this.CopyPropertiesTo(pagedetail);
+    this.CopyPropertiesTo(pagedetailscript);
+    this.CopyPropertiesTo(configuration);
+    this.CopyPropertiesTo(mapping);
+    this.CopyPropertiesTo(irepository);
+    this.CopyPropertiesTo(repository);
+    this.CopyPropertiesTo(wfApi);
+    
+    var folder = ClassName+"\\";
+    directory = directory+"\\";
+    
+    //渲染文件
+    dto.RenderToFile(directory+folder+ClassName+"Dto.cs",overwrite);
+    entity.RenderToFile(directory+folder+ClassName+".cs",overwrite);
+    iservice.RenderToFile(directory+folder+"I"+ClassName+"Service.cs",overwrite);
+    cservice.RenderToFile(directory+folder+ClassName+"Service.cs",overwrite);
+  
+    configuration.RenderToFile(directory+folder+ClassName+"Configuration.cs",overwrite);
+    mapping.RenderToFile(directory+folder+ClassName+"Mapping.cs",overwrite);
+    irepository.RenderToFile(directory+folder+"I"+ClassName+"Repository.cs",overwrite);
+    repository.RenderToFile(directory+folder+ClassName+"Repository.cs",overwrite);
+    
+    
+    if(this.NeedWeb){
+        controller.RenderToFile(directory+folder+ClassName+"Controller.cs",overwrite);
+        pagedetail.RenderToFile(directory+folder+ClassName+"Detail.cshtml",overwrite);
+        pagedetailscript.RenderToFile(directory+folder+ClassName+"Detail.js",overwrite);
+    }
+    
+    if(this.EnableApprove){
+        wfApi.RenderToFile(directory+folder+ClassName+"ApiController.cs",overwrite);
+    }
+}
+
+public void OnTableChange(object sender, EventArgs e){
+    //调试
+    //System.Diagnostics.Debugger.Launch();
+    //System.Diagnostics.Debugger.Break();
+    var tableName= this.Table.FullName.Replace("dbo.","");
+    this.ClassName = tableName.Split('_')[1];
+    this.TableName = tableName;
+}
+
+public void OnNameSpaceChange(object sender, EventArgs e){
+    //调试
+    //System.Diagnostics.Debugger.Launch();
+    //System.Diagnostics.Debugger.Break();
+    if(!string.IsNullOrEmpty(ModuleNameSpace))
+    {
+        var strs= this.ModuleNameSpace.Split('.');
+        if(strs.Length>=1 && string.IsNullOrEmpty(strs[1]))
+            ModuleName =strs[1];
+    }
+}
+
+
+ //解决方案输出路径  弹窗交互选择路径
+[Editor(typeof(System.Windows.Forms.Design.FolderNameEditor), typeof(System.Drawing.Design.UITypeEditor))] 
+[NotChecked]
+[DefaultValue("")]
+[Description("选择文件输出目录")]
+public string OutputDirectory 
+{ 
+    get
+    {
+        return directory;
+    }
+    set
+    {
+        if (value.EndsWith("\\"))
+            value = value.Substring(0, value.Length -1);
+        directory = value;
+    } 
+}
+</script>

@@ -1,0 +1,49 @@
+﻿<%-- 
+Name:
+Author: 
+Description: 用于生成代码文件
+--%>
+<%@ Template Language="C#" TargetLanguage="Text" Debug="False" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Design" %> <%--用来设置弹出文件选择框--%>
+<%@ Assembly Name="CodeSmith.BaseTemplates" %> <%--用于将自身模板生成的信息输出到指定文件--%>
+<%@ Import Namespace="CodeSmith.BaseTemplates" %>
+<%@ Import Namespace="SchemaExplorer" %>
+
+<%@ Property Name="MainTable" Type="SchemaExplorer.TableSchema" Category="元数据" Description="主体" OnChanged="OnTableChange" %>
+<%@ Property Name="NavigationTable" Type="SchemaExplorer.TableSchema" Category="元数据" Description="导航属性" OnChanged="OnTableChange" %>
+
+<%-- 注册要生成的模板 --%>
+
+<%-- 执行输出文件的函数 --%>
+
+<script runat="template">
+private string directory = String.Empty;
+
+public void OnTableChange(object sender,EventArgs e){
+    // 调试
+    // System.Diagnostics.Debugger.Launch();
+    // System.Diagnostics.Debugger.Break();
+    var name1= this.MainTable.FullName.Replace("dbo.","");
+    var name2= this.NavigationTable.FullName.Replace("dbo.","");
+}
+
+ // 解决方案输出路径  弹窗交互选择路径
+[Editor(typeof(System.Windows.Forms.Design.FolderNameEditor), typeof(System.Drawing.Design.UITypeEditor))] 
+[NotChecked]
+[DefaultValue("")]
+[Description("选择文件输出目录")]
+public string OutputDirectory 
+{ 
+    get
+    {
+        return directory;
+    }
+    set
+    {
+        if (value.EndsWith("\\"))
+            value = value.Substring(0, value.Length -1);
+        directory = value;
+    } 
+}
+</script>
